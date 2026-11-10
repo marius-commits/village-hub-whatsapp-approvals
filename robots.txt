@@ -1,0 +1,20 @@
+# Village Hub WhatsApp approvals dashboard.
+# Hidden from general search. Social crawlers are allowed so share previews work.
+
+User-agent: *
+Disallow: /
+
+User-agent: facebookexternalhit
+Allow: /
+
+User-agent: Facebot
+Allow: /
+
+User-agent: WhatsApp
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: LinkedInBot
+Allow: /
