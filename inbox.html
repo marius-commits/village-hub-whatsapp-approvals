@@ -47,7 +47,9 @@
   #auth { max-width:440px; margin:40px auto; background:var(--white); border:1px solid var(--line); border-radius:12px; padding:20px; }
   label { display:block; font-weight:600; margin:10px 0 6px; color:var(--brown); }
   input, textarea, select { width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px; font:inherit; background:#fff; color:var(--ink); }
-  #app { display:flex; height:calc(100vh - 64px); height:calc(100dvh - 64px); }
+  body { display:flex; flex-direction:column; height:100vh; height:100dvh; }
+  #app { display:flex; flex:1; min-height:0; }
+  button { white-space:nowrap; }
   #list { width:340px; border-right:1px solid var(--line); overflow-y:auto; background:var(--white); }
   .t { padding:12px 14px; border-bottom:1px solid var(--line); cursor:pointer; display:flex; gap:10px; }
   .t:hover, .t.sel { background:#f3ead8; }
@@ -73,7 +75,7 @@
     #list { width:100%; border-right:0; }
     #app.show-thread #list { display:none; } #app:not(.show-thread) #thread { display:none; }
     #th-head .back { display:inline-block; } .m { max-width:88%; }
-    header .who span { display:none; }
+    header .who span { display:none; } header small { font-size:11px; } header h1 { font-size:16px; }
   }
 </style>
 </head>
