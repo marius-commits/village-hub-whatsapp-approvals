@@ -116,7 +116,7 @@
     <img class="logo" src="https://marius-commits.github.io/village-hub-whatsapp-approvals/logo.png" width="64" height="64" alt="The Village Hub logo">
     <div>
       <h1>The Village Hub</h1>
-      <p>WhatsApp approvals · Nooitgedacht Village, Stellenbosch</p>
+      <p>WhatsApp approvals · Nooitgedacht Village, Stellenbosch · <a href="https://marius-commits.github.io/village-hub-whatsapp-approvals/approve.html" style="color:#E3C878">Approve / edit / skip</a></p>
     </div>
   </header>
   <div class="banner">Sending is off. Every message stays a draft until Christel or Marius approves it — and auto-send stays off until Marius signs that off in writing.</div>
@@ -131,7 +131,7 @@
 
     <section id="queue" class="active">
       <h2>Queued messages</h2>
-      <p class="lead">These are drafts only. Nothing has been sent, and this page cannot send or approve a message. Phone numbers are hidden.</p>
+      <p class="lead">These are drafts only. Nothing has been sent, and this overview cannot approve a message. Phone numbers are hidden. To approve, edit or skip a row, use the <a href="https://marius-commits.github.io/village-hub-whatsapp-approvals/approve.html">staff approval page</a> (magic-link sign-in).</p>
       <div id="queue-body"></div>
     </section>
 
@@ -165,7 +165,7 @@
         <li>Add a payment method on the WhatsApp account.</li>
         <li>Submit the Phase 1 templates (T01–T05, T14, T17, T33) to Meta — English only unless you want Afrikaans too.</li>
         <li>Register this webhook with Meta (not done).</li>
-        <li>Decide whether every website WhatsApp link should move from 072 531 0904 to +27 63 260 3513 (not changed today).</li>
+        <li>Website WhatsApp links are moving from 072 531 0904 to +27 63 260 3513 (approved 10 Nov 2026). Google Ads are unchanged.</li>
         <li>No Google Ads changes until you say yes.</li>
         <li>One week of dry-run, then switch triggers on one at a time. Auto-send stays off until you sign it off in writing.</li>
       </ol>
@@ -186,7 +186,7 @@
     const catPill = (c) => pill(c === 'marketing' ? 'mkt' : c === 'service' ? 'svc' : c === 'internal' ? 'int' : 'util', c || '—');
     const stPill = (s) => pill(s === 'pending_approval' ? 'pending' : s || 'off', (s || '').replace('_', ' '));
 
-    fetch('https://lcrjcdlydlfrohtppmky.supabase.co/functions/v1/wa-dashboard/api/data?apikey=sb_publishable_o99egQoMPiyVoqxYGwhLEw_vzzX1fVo', { headers: { 'cache-control': 'no-store' } })
+    fetch('https://lcrjcdlydlfrohtppmky.supabase.co/functions/v1/wa-dashboard/api/data?apikey=sb_publishable_o99egQoMPiyVoqxYGwhLEw_vzzX1fVo')
       .then((r) => r.json())
       .then((data) => {
         if (!data.ok) throw new Error(data.error || 'Could not load data');

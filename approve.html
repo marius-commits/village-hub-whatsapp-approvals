@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>The Village Hub · Approve WhatsApp messages</title>
+  <meta name="description" content="Sign in to approve, edit or skip queued Village Hub WhatsApp messages. Sending stays off until a signed-off auto-send decision.">
+  <meta name="robots" content="noindex, nofollow, noarchive">
+  <link rel="canonical" href="https://marius-commits.github.io/village-hub-whatsapp-approvals/approve.html">
+  <link rel="icon" href="https://marius-commits.github.io/village-hub-whatsapp-approvals/favicon.ico" sizes="32x32" type="image/x-icon">
+  <link rel="icon" href="https://marius-commits.github.io/village-hub-whatsapp-approvals/favicon-32.png" type="image/png" sizes="32x32">
+  <link rel="apple-touch-icon" href="https://marius-commits.github.io/village-hub-whatsapp-approvals/apple-touch-icon.png">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="The Village Hub">
+  <meta property="og:title" content="The Village Hub · Approve WhatsApp messages">
+  <meta property="og:description" content="Staff sign-in to approve, edit or skip queued WhatsApp drafts. Sending is off.">
+  <meta property="og:url" content="https://marius-commits.github.io/village-hub-whatsapp-approvals/approve.html">
+  <meta property="og:image" content="https://marius-commits.github.io/village-hub-whatsapp-approvals/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The Village Hub · Approve WhatsApp messages">
+  <meta name="twitter:description" content="Staff sign-in to approve, edit or skip queued WhatsApp drafts. Sending is off.">
+  <meta name="twitter:image" content="https://marius-commits.github.io/village-hub-whatsapp-approvals/og-image.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --brown: #3A2412; --brown2: #6B4423; --gold: #C9A24B; --gold2: #E3C878;
+      --olive: #8a9a5b; --olive2: #768a4f; --cream: #F8F1E5; --ink: #2b2118;
+      --muted: #6a5a4a; --line: #eadfcb; --white: #fffdf8; --bad: #b0472f; --ok: #2f6a2a;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--cream); color: var(--ink);
+      font-family: Inter, "Noto Sans", sans-serif; font-size: 16px; line-height: 1.5; }
+    a { color: var(--brown2); }
+    header {
+      background: var(--brown); color: #fff; border-bottom: 6px solid var(--gold);
+      padding: 20px 28px 22px; display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+    }
+    header img.logo { width: 64px; height: 64px; background: var(--cream); border-radius: 12px; padding: 4px; }
+    header h1 { font-family: Poppins, sans-serif; font-size: 26px; margin: 0; line-height: 1.15; }
+    header p { margin: 4px 0 0; color: var(--gold2); font-size: 14px; }
+    header .who { margin-left: auto; font-size: 13px; color: var(--gold2); text-align: right; }
+    header .who button, .btn {
+      font-family: Poppins, sans-serif; font-size: 13px; border: 0; border-radius: 999px;
+      padding: 8px 14px; cursor: pointer;
+    }
+    .banner { background: var(--olive); color: #fff; text-align: center; padding: 10px 16px; font-weight: 600; }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 24px 20px 80px; }
+    .card { background: var(--white); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; margin-bottom: 14px; }
+    .card.highlight { outline: 3px solid var(--gold); }
+    .card h3 { font-family: Poppins, sans-serif; margin: 0 0 6px; color: var(--brown); font-size: 17px; }
+    .meta { color: var(--muted); font-size: 13px; margin: 0 0 10px; }
+    .msg { white-space: pre-wrap; background: var(--cream); border-radius: 8px; padding: 12px; font-size: 14.5px; }
+    textarea { width: 100%; min-height: 140px; font: inherit; padding: 10px; border: 1px solid var(--line);
+      border-radius: 8px; background: #fff; color: var(--ink); }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; align-items: center; }
+    .btn-approve { background: var(--olive); color: #fff; }
+    .btn-edit { background: var(--brown); color: #fff; }
+    .btn-skip { background: #fff; color: var(--bad); border: 1px solid #e8c4ba !important; }
+    .btn-ghost { background: transparent; color: var(--brown); border: 1px solid var(--line) !important; }
+    .pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+    .pill.pending { background: #fff3c4; color: #6a4b00; }
+    .pill.approved { background: #dfeedd; color: var(--ok); }
+    .pill.skipped { background: #eee; color: #555; }
+    .pill.internal { background: #e7eef7; color: #25406a; }
+    .pill.test { background: #f3ead8; color: var(--brown2); }
+    .err { background: #fbeee0; border-left: 4px solid var(--bad); padding: 10px 12px; border-radius: 6px; }
+    .ok { background: #e8f3e6; border-left: 4px solid var(--ok); padding: 10px 12px; border-radius: 6px; }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin: 0 0 18px; }
+    .stat { background: var(--white); border: 1px solid var(--line); border-top: 4px solid var(--gold);
+      border-radius: 10px; padding: 12px 14px; }
+    .stat b { display: block; font-family: Poppins, sans-serif; font-size: 26px; color: var(--brown); }
+    .stat span { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+    label { display: block; font-weight: 600; margin: 0 0 6px; color: var(--brown); }
+    input[type=email], input[type=text] {
+      width: 100%; max-width: 360px; padding: 10px 12px; border: 1px solid var(--line);
+      border-radius: 8px; font: inherit; margin-bottom: 10px;
+    }
+    footer { margin-top: 40px; color: var(--muted); font-size: 13px; border-top: 1px solid var(--line); padding-top: 16px; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <header>
+    <img class="logo" src="https://marius-commits.github.io/village-hub-whatsapp-approvals/logo.png" width="64" height="64" alt="The Village Hub logo">
+    <div>
+      <h1>Approve WhatsApp messages</h1>
+      <p>The Village Hub · first-week verification queue</p>
+    </div>
+    <div class="who" id="who"></div>
+  </header>
+  <div class="banner">Sending is off. Approving a row records who signed it and when — it does not send the message.</div>
+  <div class="wrap">
+    <p class="meta"><a href="./">Read-only overview</a> · Sign-in is limited to Marius and Christel.</p>
+    <div id="notice"></div>
+    <div id="auth" class="card"></div>
+    <div id="app" class="hidden">
+      <div class="stats" id="stats"></div>
+      <div id="list"></div>
+    </div>
+    <footer>
+      The Village Hub · Business WhatsApp +27 63 260 3513 · Staff alerts (T33) to Christel stay in this queue until approved, and are not sent automatically.
+    </footer>
+  </div>
+  <script>
+    const SUPABASE_URL = 'https://lcrjcdlydlfrohtppmky.supabase.co';
+    const ANON = 'sb_publishable_o99egQoMPiyVoqxYGwhLEw_vzzX1fVo';
+    const API = SUPABASE_URL + '/functions/v1/wa-approvals';
+    const ALLOW = ['marius@brick-field.co.za', 'christel@villagehub.co.za'];
+    const sb = supabase.createClient(SUPABASE_URL, ANON, {
+      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+    });
+    const params = new URLSearchParams(location.search);
+    const focusId = params.get('id');
+    const notice = document.getElementById('notice');
+    const authEl = document.getElementById('auth');
+    const appEl = document.getElementById('app');
+    const whoEl = document.getElementById('who');
+
+    function showNotice(msg, ok) {
+      notice.innerHTML = msg ? `<div class="${ok ? 'ok' : 'err'}">${msg}</div>` : '';
+    }
+    function esc(s) {
+      return String(s ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+    function fmt(ts) {
+      if (!ts) return '';
+      try {
+        return new Date(ts).toLocaleString('en-ZA', { timeZone: 'Africa/Johannesburg', dateStyle: 'medium', timeStyle: 'short' }) + ' SAST';
+      } catch { return ts; }
+    }
+
+    async function api(path, opts = {}) {
+      const { data: { session } } = await sb.auth.getSession();
+      if (!session) throw new Error('Sign in required');
+      const res = await fetch(API + path, {
+        method: opts.method || 'GET',
+        headers: {
+          'authorization': 'Bearer ' + session.access_token,
+          'apikey': ANON,
+          'content-type': 'application/json'
+        },
+        body: opts.body ? JSON.stringify(opts.body) : undefined
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || json.ok === false) throw new Error(json.error || ('Request failed (' + res.status + ')'));
+      return json;
+    }
+
+    function renderAuth(loggedOutMessage) {
+      authEl.classList.remove('hidden');
+      appEl.classList.add('hidden');
+      whoEl.innerHTML = '';
+      authEl.innerHTML = `
+        <h3>Staff sign-in</h3>
+        <p class="meta">Use a magic link or the 6-digit code emailed to an allowlisted inbox: marius@brick-field.co.za or christel@villagehub.co.za.</p>
+        ${loggedOutMessage ? `<div class="err" style="margin-bottom:10px">${esc(loggedOutMessage)}</div>` : ''}
+        <label for="email">Email</label>
+        <input id="email" type="email" autocomplete="username" placeholder="you@…">
+        <div class="row">
+          <button class="btn btn-approve" type="button" id="send-link">Email me a sign-in link</button>
+        </div>
+        <label for="otp" style="margin-top:14px">Or enter the code from the email</label>
+        <input id="otp" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="6-digit code">
+        <div class="row">
+          <button class="btn btn-edit" type="button" id="verify-otp">Verify code</button>
+        </div>`;
+      document.getElementById('send-link').onclick = requestLink;
+      document.getElementById('verify-otp').onclick = verifyOtp;
+    }
+
+    async function requestLink() {
+      const email = document.getElementById('email').value.trim().toLowerCase();
+      if (!ALLOW.includes(email)) {
+        showNotice('Only the two allowlisted Village Hub inboxes can sign in.', false);
+        return;
+      }
+      showNotice('Sending a sign-in email…', true);
+      const { error } = await sb.auth.signInWithOtp({
+        email,
+        options: {
+          shouldCreateUser: true,
+          emailRedirectTo: 'https://marius-commits.github.io/village-hub-whatsapp-approvals/approve.html'
+        }
+      });
+      if (error) showNotice(error.message, false);
+      else showNotice('Check that inbox for a magic link or a 6-digit code. The link returns you here.', true);
+    }
+
+    async function verifyOtp() {
+      const email = document.getElementById('email').value.trim().toLowerCase();
+      const token = document.getElementById('otp').value.trim();
+      if (!email || !token) { showNotice('Enter the email and the code from the message.', false); return; }
+      const { error } = await sb.auth.verifyOtp({ email, token, type: 'email' });
+      if (error) showNotice(error.message, false);
+      else { showNotice(''); await boot(); }
+    }
+
+    async function signOut() {
+      await sb.auth.signOut();
+      renderAuth('');
+      showNotice('Signed out.', true);
+    }
+
+    async function act(id, action, extra) {
+      try {
+        const res = await api('/api/action', { method: 'POST', body: { id, action, ...extra } });
+        showNotice(`${action} recorded for ${res.approver} at ${fmt(res.at)}. The message was not sent.`, true);
+        await loadQueue();
+      } catch (e) {
+        showNotice(e.message, false);
+      }
+    }
+
+    function renderRows(payload) {
+      const counts = payload.counts || {};
+      document.getElementById('stats').innerHTML = [
+        [counts.pending_approval ?? 0, 'Pending approval'],
+        [counts.approved ?? 0, 'Approved (not sent)'],
+        [counts.skipped ?? 0, 'Skipped']
+      ].map(([n, l]) => `<div class="stat"><b>${n}</b><span>${l}</span></div>`).join('');
+
+      const rows = payload.queue || [];
+      const pending = rows.filter((r) => r.status === 'pending_approval' || r.status === 'draft');
+      const done = rows.filter((r) => r.status !== 'pending_approval' && r.status !== 'draft');
+      const blocks = [];
+      function card(r, canAct) {
+        const c = r.contact || {};
+        const who = [c.first_name, c.phone_e164, c.email].filter(Boolean).join(' · ') || 'No contact on this row';
+        const hl = focusId && r.id === focusId ? ' highlight' : '';
+        const pills = [
+          `<span class="pill ${r.status}">${esc(r.status)}</span>`,
+          r.kind === 'internal' || r.template_code === 'T33' ? '<span class="pill internal">Staff alert T33</span>' : '',
+          r.is_test ? '<span class="pill test">test</span>' : '',
+          r.trigger_id ? `<span class="pill">${esc(r.trigger_id)}</span>` : ''
+        ].join(' ');
+        let actions = '';
+        if (canAct) {
+          actions = `
+            <div class="row">
+              <button class="btn btn-approve" data-act="approve" data-id="${r.id}">Approve</button>
+              <button class="btn btn-edit" data-act="toggle-edit" data-id="${r.id}">Edit</button>
+              <button class="btn btn-skip" data-act="skip" data-id="${r.id}">Skip</button>
+            </div>
+            <div class="edit-box hidden" id="edit-${r.id}">
+              <label>Edit the message, then save and approve</label>
+              <textarea id="text-${r.id}">${esc(r.rendered_text)}</textarea>
+              <div class="row">
+                <button class="btn btn-approve" data-act="edit" data-id="${r.id}">Save and approve</button>
+              </div>
+            </div>
+            <div class="skip-box hidden" id="skip-${r.id}">
+              <label>Why skip this one? (optional)</label>
+              <input type="text" id="reason-${r.id}" placeholder="e.g. duplicate, wrong lead">
+              <div class="row">
+                <button class="btn btn-skip" data-act="confirm-skip" data-id="${r.id}">Confirm skip</button>
+              </div>
+            </div>`;
+        } else {
+          const by = r.approved_by ? ` by ${esc(r.approved_by)}` : '';
+          const at = r.approved_at ? ` at ${fmt(r.approved_at)}` : '';
+          actions = `<p class="meta">Recorded${by}${at}${r.skip_reason ? '. Reason: ' + esc(r.skip_reason) : ''}.</p>`;
+        }
+        return `<article class="card${hl}" id="row-${r.id}">
+          <h3>${pills}</h3>
+          <p class="meta">${esc(who)} · queued ${fmt(r.created_at)} · ${esc(r.template_code || r.kind || '')}</p>
+          <div class="msg">${esc(r.rendered_text)}</div>
+          ${r.parent_queue_id ? `<p class="meta">Linked to queue row <a href="?id=${esc(r.parent_queue_id)}">${esc(r.parent_queue_id)}</a></p>` : ''}
+          ${actions}
+        </article>`;
+      }
+      if (!pending.length) blocks.push('<div class="card"><p>Nothing is waiting for approval right now.</p></div>');
+      else blocks.push(...pending.map((r) => card(r, true)));
+      if (done.length) {
+        blocks.push('<h3 style="font-family:Poppins,sans-serif;color:#3A2412">Already reviewed</h3>');
+        blocks.push(...done.slice(0, 40).map((r) => card(r, false)));
+      }
+      document.getElementById('list').innerHTML = blocks.join('');
+      document.getElementById('list').onclick = async (ev) => {
+        const btn = ev.target.closest('button[data-act]');
+        if (!btn) return;
+        const id = btn.dataset.id;
+        const actName = btn.dataset.act;
+        if (actName === 'toggle-edit') {
+          document.getElementById('edit-' + id).classList.toggle('hidden');
+          return;
+        }
+        if (actName === 'skip') {
+          document.getElementById('skip-' + id).classList.toggle('hidden');
+          return;
+        }
+        if (actName === 'approve') return act(id, 'approve');
+        if (actName === 'edit') {
+          const text = document.getElementById('text-' + id).value;
+          return act(id, 'edit', { rendered_text: text });
+        }
+        if (actName === 'confirm-skip') {
+          const reason = document.getElementById('reason-' + id).value;
+          return act(id, 'skip', { reason });
+        }
+      };
+      if (focusId) {
+        const el = document.getElementById('row-' + focusId);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+
+    async function loadQueue() {
+      const payload = await api('/api/queue');
+      renderRows(payload);
+    }
+
+    async function boot() {
+      const { data: { session } } = await sb.auth.getSession();
+      if (!session) { renderAuth(''); return; }
+      const email = (session.user?.email || '').toLowerCase();
+      if (!ALLOW.includes(email)) {
+        await sb.auth.signOut();
+        renderAuth('That inbox is not on the approver list.');
+        return;
+      }
+      authEl.classList.add('hidden');
+      appEl.classList.remove('hidden');
+      whoEl.innerHTML = `${esc(email)}<br><button class="btn btn-ghost" type="button" id="signout">Sign out</button>`;
+      document.getElementById('signout').onclick = signOut;
+      try {
+        await loadQueue();
+      } catch (e) {
+        showNotice(e.message, false);
+        if (/sign in|invalid or expired|not on the approver/i.test(e.message)) renderAuth(e.message);
+      }
+    }
+
+    sb.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') boot();
+    });
+    boot();
+  </script>
+</body>
+</html>
