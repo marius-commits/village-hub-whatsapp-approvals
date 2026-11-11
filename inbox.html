@@ -78,6 +78,9 @@
   .alert-btn { background:var(--gold); color:var(--brown); font-weight:600; }
   .alert-btn.on { background:var(--olive); color:#fff; }
   #ios-tip { margin:8px 14px; font-size:12px; color:var(--muted); background:#fff; border:1px solid var(--line); border-radius:8px; padding:8px 12px; }
+  #pwmodal { position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:10; display:flex; align-items:center; justify-content:center; padding:16px; }
+  #pwmodal .card { max-width:400px; width:100%; background:var(--white); border:1px solid var(--line); border-radius:12px; padding:20px; }
+  .or { border-top:1px solid var(--line); margin-top:16px; padding-top:6px; }
   @media (max-width:760px) {
     #list { width:100%; border-right:0; }
     #app.show-thread #list { display:none; } #app:not(.show-thread) #thread { display:none; }
@@ -110,7 +113,13 @@ const ALLOW = ['marius@brick-field.co.za', 'christel@villagehub.co.za', 'francoi
 const PAGE_TITLE = 'The Village Hub · WhatsApp inbox';
 const LOGO = 'https://marius-commits.github.io/village-hub-whatsapp-approvals/logo.png';
 const PAGE = 'https://marius-commits.github.io/village-hub-whatsapp-approvals/inbox.html';
-const sb = supabase.createClient(SUPABASE_URL, ANON, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
+const AUTH_KEY = 'vh-inbox-auth';
+// One-time move of an existing session from the old default key, so nobody has to sign in again after this update.
+try {
+  const OLD_KEY = 'sb-lcrjcdlydlfrohtppmky-auth-token';
+  if (!localStorage.getItem(AUTH_KEY) && localStorage.getItem(OLD_KEY)) localStorage.setItem(AUTH_KEY, localStorage.getItem(OLD_KEY));
+} catch (e) {}
+const sb = supabase.createClient(SUPABASE_URL, ANON, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storage: window.localStorage, storageKey: AUTH_KEY } });
 const $ = (id) => document.getElementById(id);
 let current = new URLSearchParams(location.search).get('c');
 let threadData = null, sending = false, lastMsgCount = -1;
@@ -125,10 +134,23 @@ function short(ts) { if (!ts) return ''; const d = new Date(ts); const today = n
 function note(msg, ok) { $('notice').innerHTML = msg ? `<div class="${ok ? 'ok' : 'err'}">${esc(msg)}</div>` : ''; if (msg) setTimeout(() => { if ($('notice').textContent === msg) $('notice').innerHTML = ''; }, 6000); }
 function left(exp) { const ms = new Date(exp).getTime() - Date.now(); if (ms <= 0) return 'closed'; const h = Math.floor(ms/3600000), m = Math.floor(ms%3600000/60000); return `${h}h ${m}m left`; }
 
+// Thrown only when the saved sign-in is truly gone (refresh token rejected), never for a stale access token.
+class AuthGone extends Error {}
+let refreshing = null;
+async function refreshOnce() {
+  if (!refreshing) refreshing = sb.auth.refreshSession().finally(() => { refreshing = null; });
+  const { data, error } = await refreshing;
+  if (data && data.session) return data.session;
+  // Network trouble is not a sign-out: keep the saved session and let the next poll try again.
+  if (error && (error.name === 'AuthRetryableFetchError' || !error.status)) throw new Error('Connection problem. Retrying shortly.');
+  throw new AuthGone('Your sign-in has ended on this device. Please sign in again.');
+}
 async function api(path, opts = {}) {
-  const { data: { session } } = await sb.auth.getSession();
-  if (!session) throw new Error('Sign in required');
-  const res = await fetch(API + path, { method: opts.method || 'GET', headers: { authorization: 'Bearer ' + session.access_token, apikey: ANON, 'content-type': 'application/json' }, body: opts.body ? JSON.stringify(opts.body) : undefined });
+  let { data: { session } } = await sb.auth.getSession();
+  if (!session) throw new AuthGone('Sign in required');
+  const call = (tok) => fetch(API + path, { method: opts.method || 'GET', headers: { authorization: 'Bearer ' + tok, apikey: ANON, 'content-type': 'application/json' }, body: opts.body ? JSON.stringify(opts.body) : undefined });
+  let res = await call(session.access_token);
+  if (res.status === 401) { session = await refreshOnce(); res = await call(session.access_token); }
   if (opts.raw) return res;
   const j = await res.json().catch(() => ({}));
   if (!res.ok || j.ok === false) throw new Error(j.error || ('Request failed (' + res.status + ')'));
@@ -138,12 +160,14 @@ async function api(path, opts = {}) {
 function renderAuth(msg) {
   $('app').classList.add('hidden'); $('auth').classList.remove('hidden'); $('who').innerHTML = '';
   $('auth').innerHTML = `<h2 style="font-family:Poppins;margin:0 0 6px;color:var(--brown)">Staff sign-in</h2>
-    <p class="hint">For marius@brick-field.co.za, christel@villagehub.co.za and francois@brick-field.co.za. We email you a code.</p>
+    <p class="hint">For marius@brick-field.co.za, christel@villagehub.co.za and francois@brick-field.co.za. You only need the emailed code once per device or browser. After that you stay signed in here. Once you're in, use <b>Set password</b> if you'd rather sign in with a password next time.</p>
     ${msg ? `<div class="err">${esc(msg)}</div>` : ''}
     <label for="email">Work email</label><input id="email" type="email" autocomplete="username">
     <div class="row"><button class="b-pri" id="send">Email me a code</button></div>
     <label for="otp">Code from the email</label><input id="otp" inputmode="numeric" autocomplete="one-time-code">
-    <div class="row"><button class="b-dark" id="verify">Sign in</button></div>`;
+    <div class="row"><button class="b-dark" id="verify">Sign in</button></div>
+    <div class="or"><label for="pw">Or sign in with your password</label><input id="pw" type="password" autocomplete="current-password">
+    <div class="row"><button class="b-dark" id="pwbtn">Sign in with password</button></div></div>`;
   $('send').onclick = async () => {
     const email = $('email').value.trim().toLowerCase();
     if (!ALLOW.includes(email)) return note('Only Marius, Christel and Francois can sign in.');
@@ -155,6 +179,49 @@ function renderAuth(msg) {
     const { error } = await sb.auth.verifyOtp({ email, token, type: 'email' });
     if (error) note(error.message); else boot();
   };
+  $('pwbtn').onclick = async () => {
+    const email = $('email').value.trim().toLowerCase(), password = $('pw').value;
+    if (!ALLOW.includes(email)) return note('Only Marius, Christel and Francois can sign in.');
+    if (!password) return note('Type your password first.');
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    if (error) note(/invalid/i.test(error.message) ? 'Wrong email or password. If you have not set a password yet, use the emailed code.' : error.message); else boot();
+  };
+  $('pw').onkeydown = (e) => { if (e.key === 'Enter') $('pwbtn').click(); };
+}
+
+function openSetPassword() {
+  if ($('pwmodal')) return;
+  const m = document.createElement('div'); m.id = 'pwmodal';
+  m.innerHTML = `<div class="card"><h2 style="font-family:Poppins;margin:0 0 6px;color:var(--brown)">Set password</h2>
+    <p class="hint">Use at least 8 characters. Then you can sign in with your email and this password instead of a code.</p>
+    <label for="np1">New password</label><input id="np1" type="password" autocomplete="new-password">
+    <label for="np2">Repeat it</label><input id="np2" type="password" autocomplete="new-password">
+    <div id="pwmsg"></div>
+    <div class="row"><button class="b-pri" id="pwsave">Save password</button><button class="b-ghost" id="pwcancel">Close</button></div></div>`;
+  document.body.appendChild(m);
+  const close = () => m.remove();
+  const say = (t, ok) => { $('pwmsg').innerHTML = `<div class="${ok ? 'ok' : 'err'}" style="margin-top:10px;box-shadow:none">${esc(t)}</div>`; };
+  $('pwcancel').onclick = close;
+  m.onclick = (e) => { if (e.target === m) close(); };
+  $('np1').focus();
+  $('pwsave').onclick = async () => {
+    const a = $('np1').value, b = $('np2').value;
+    if (a.length < 8) return say('Use at least 8 characters.');
+    if (a !== b) return say('The two passwords do not match.');
+    $('pwsave').disabled = true;
+    const { error } = await sb.auth.updateUser({ password: a });
+    $('pwsave').disabled = false;
+    if (error) return say(error.message);
+    say('Password saved. You can now sign in with your email and password.', true);
+    $('np1').value = ''; $('np2').value = '';
+    setTimeout(close, 2500);
+  };
+}
+
+async function authFailed(e) {
+  if (!(e instanceof AuthGone)) { note(e.message); return; }
+  await sb.auth.signOut({ scope: 'local' }).catch(() => {});
+  renderAuth(e.message);
 }
 
 function threadName(t) {
@@ -166,7 +233,8 @@ async function loadThreads(opts = {}) {
   const j = await api('/threads');
   const alertLabel = alertsOn && notificationGranted() ? 'Alerts on' : 'Enable alerts';
   const alertClass = alertsOn && notificationGranted() ? 'alert-btn on' : 'alert-btn';
-  $('who').innerHTML = `<span>${esc(j.me.email)} </span><button class="${alertClass}" id="alerts">${alertLabel}</button> <button class="b-ghost" style="color:#fff" id="out">Sign out</button>`;
+  $('who').innerHTML = `<span>${esc(j.me.email)} </span><button class="${alertClass}" id="alerts">${alertLabel}</button> <button class="b-ghost" style="color:#fff" id="setpw">Set password</button> <button class="b-ghost" style="color:#fff" id="out">Sign out</button>`;
+  $('setpw').onclick = () => openSetPassword();
   $('out').onclick = async () => { await sb.auth.signOut(); renderAuth(''); };
   $('alerts').onclick = () => enableAlerts();
   showIosTip();
@@ -382,7 +450,7 @@ async function boot() {
     await loadThreads();
     if (current) await openThread(current);
     startRealtime();
-  } catch (e) { if (/sign in|session|approver/i.test(e.message)) { await sb.auth.signOut(); renderAuth(e.message); } else note(e.message); }
+  } catch (e) { await authFailed(e); }
 }
 setInterval(async () => {
   if ($('app').classList.contains('hidden')) return;
@@ -391,14 +459,15 @@ setInterval(async () => {
     if (current && !document.hidden && !(document.activeElement && ['TEXTAREA','INPUT','SELECT'].includes(document.activeElement.tagName))) {
       await openThread(current, true);
     }
-  } catch (e) {}
+  } catch (e) { if (e instanceof AuthGone) authFailed(e); }
 }, 10000);
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden && !$('app').classList.contains('hidden')) {
-    loadThreads().then(() => { if (current) openThread(current, true); }).catch(() => {});
+    loadThreads().then(() => { if (current) openThread(current, true); }).catch((e) => { if (e instanceof AuthGone) authFailed(e); });
   }
 });
-sb.auth.onAuthStateChange((ev) => { if (ev === 'SIGNED_IN') boot(); });
+// Run boot outside the auth callback (supabase-js advice) so it cannot block the auth lock.
+sb.auth.onAuthStateChange((ev) => { if (ev === 'SIGNED_IN') setTimeout(boot, 0); });
 boot();
 </script>
 </body>
