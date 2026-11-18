@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>The Village Hub · Client WhatsApp backlog</title>
+  <meta name="description" content="Staff sign-in to approve, decline or change the Village Hub client WhatsApp backlog. Approving queues a message; it does not send it.">
+  <meta name="robots" content="noindex, nofollow, noarchive">
+  <link rel="canonical" href="https://marius-commits.github.io/village-hub-whatsapp-approvals/backlog.html">
+  <link rel="icon" href="https://marius-commits.github.io/village-hub-whatsapp-approvals/favicon.ico" sizes="32x32" type="image/x-icon">
+  <link rel="icon" href="https://marius-commits.github.io/village-hub-whatsapp-approvals/favicon-32.png" type="image/png" sizes="32x32">
+  <link rel="apple-touch-icon" href="https://marius-commits.github.io/village-hub-whatsapp-approvals/apple-touch-icon.png">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="The Village Hub">
+  <meta property="og:title" content="The Village Hub · Client WhatsApp backlog">
+  <meta property="og:description" content="Staff sign-in to approve, decline or change client WhatsApp messages. Approving queues; it does not send.">
+  <meta property="og:url" content="https://marius-commits.github.io/village-hub-whatsapp-approvals/backlog.html">
+  <meta property="og:image" content="https://marius-commits.github.io/village-hub-whatsapp-approvals/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The Village Hub · Client WhatsApp backlog">
+  <meta name="twitter:description" content="Staff sign-in to approve, decline or change client WhatsApp messages. Approving queues; it does not send.">
+  <meta name="twitter:image" content="https://marius-commits.github.io/village-hub-whatsapp-approvals/og-image.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root { --brown:#3A2412; --brown2:#6B4423; --gold:#C9A24B; --gold2:#E3C878; --olive:#8a9a5b; --cream:#F8F1E5;
+      --ink:#2b2118; --muted:#6a5a4a; --line:#eadfcb; --white:#fffdf8; --bad:#b0472f; --ok:#2f6a2a; }
+    * { box-sizing: border-box; }
+    html, body { margin:0; padding:0; background:var(--cream); color:var(--ink); font-family:Inter,"Noto Sans",sans-serif; font-size:15px; line-height:1.5; }
+    a { color: var(--brown2); }
+    header { background:var(--brown); color:#fff; border-bottom:6px solid var(--gold); padding:18px 24px 20px; display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+    header img.logo { width:56px; height:56px; background:var(--cream); border-radius:12px; padding:4px; }
+    header h1 { font-family:Poppins,sans-serif; font-size:24px; margin:0; line-height:1.15; }
+    header p { margin:4px 0 0; color:var(--gold2); font-size:14px; }
+    header .who { margin-left:auto; font-size:13px; color:var(--gold2); text-align:right; }
+    .banner { background:var(--olive); color:#fff; text-align:center; padding:10px 16px; font-weight:600; }
+    .wrap { max-width:1060px; margin:0 auto; padding:20px 18px 80px; }
+    button { font-family:Poppins,sans-serif; font-size:13px; border:0; border-radius:999px; padding:8px 14px; cursor:pointer; }
+    button:disabled { opacity:.5; cursor:wait; }
+    .b-ok { background:var(--olive); color:#fff; } .b-dark { background:var(--brown); color:#fff; }
+    .b-no { background:#fff; color:var(--bad); border:1px solid #e8c4ba; } .b-ghost { background:transparent; color:var(--brown); border:1px solid var(--line); }
+    header .who button { background:transparent; color:var(--gold2); border:1px solid var(--gold2); padding:4px 10px; }
+    .card { background:var(--white); border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin-bottom:12px; }
+    .card.done { opacity:.92; border-left:5px solid var(--line); } .card.st-approved { border-left-color:var(--ok); } .card.st-declined { border-left-color:#999; } .card.st-change_requested { border-left-color:var(--gold); }
+    .card h3 { font-family:Poppins,sans-serif; margin:0 0 4px; color:var(--brown); font-size:16px; }
+    .meta { color:var(--muted); font-size:13px; margin:0 0 6px; }
+    .why { font-size:14px; margin:6px 0; }
+    .msg { white-space:pre-wrap; background:var(--cream); border-radius:8px; padding:10px 12px; font-size:14.5px; margin:8px 0; }
+    .pill { display:inline-block; padding:1px 8px; border-radius:999px; font-size:11px; font-weight:700; white-space:nowrap; margin:0 3px 3px 0; background:#eee; color:#444; }
+    .p-high { background:#f7dcd5; color:var(--bad); } .p-med { background:#fff3c4; color:#6a4b00; } .p-low { background:#eee; color:#555; }
+    .s-pending { background:#fff3c4; color:#6a4b00; } .s-approved { background:#dfeedd; color:var(--ok); } .s-declined { background:#e4e4e4; color:#555; } .s-change_requested { background:#fbeee0; color:var(--brown2); }
+    .rev { background:#e8efe0; color:#3d5a2a; }
+    button.tpl { background:var(--brown); color:#fff; padding:1px 9px; font-size:11px; font-weight:700; border-radius:999px; font-family:Inter,sans-serif; }
+    button.tpl:hover { background:var(--brown2); }
+    .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:8px; }
+    textarea { width:100%; min-height:80px; font:inherit; padding:8px 10px; border:1px solid var(--line); border-radius:8px; background:#fff; }
+    input[type=email], input[type=password], input[inputmode] { width:100%; max-width:360px; padding:9px 11px; border:1px solid var(--line); border-radius:8px; font:inherit; margin-bottom:8px; }
+    label { display:block; font-weight:600; margin:8px 0 4px; color:var(--brown); }
+    .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px; margin:6px 0 14px; }
+    .stat { background:var(--white); border:1px solid var(--line); border-top:4px solid var(--gold); border-radius:10px; padding:10px 12px; }
+    .stat b { display:block; font-family:Poppins,sans-serif; font-size:24px; color:var(--brown); line-height:1.1; }
+    .stat span { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
+    .filters { display:flex; gap:8px; flex-wrap:wrap; margin:0 0 12px; }
+    .filters select { font:inherit; padding:6px 8px; border:1px solid var(--line); border-radius:8px; background:#fff; }
+    h2.cat { font-family:Poppins,sans-serif; color:var(--brown); border-bottom:3px solid var(--gold); display:inline-block; margin:18px 0 10px; font-size:19px; }
+    .err { background:#fbeee0; border-left:4px solid var(--bad); padding:10px 12px; border-radius:6px; margin-bottom:10px; }
+    .ok { background:#e8f3e6; border-left:4px solid var(--ok); padding:10px 12px; border-radius:6px; margin-bottom:10px; }
+    .note { background:#fffaf0; border:1px dashed var(--gold); border-radius:8px; padding:8px 10px; font-size:13.5px; margin-top:6px; }
+    .hidden { display:none !important; }
+    #modal { position:fixed; inset:0; background:rgba(43,33,24,.55); display:flex; align-items:center; justify-content:center; padding:16px; z-index:50; }
+    #modal .box { background:var(--white); border-radius:14px; max-width:560px; width:100%; max-height:88vh; overflow:auto; padding:18px 20px; border-top:6px solid var(--gold); }
+    #modal h3 { font-family:Poppins,sans-serif; margin:0 0 6px; color:var(--brown); }
+    .wa { background:#e9f0dc; border-radius:10px; padding:10px 12px; white-space:pre-wrap; font-size:14.5px; }
+    .wabtn { display:block; text-align:center; background:#fff; border:1px solid var(--line); border-radius:8px; padding:6px; margin-top:6px; color:#25406a; font-weight:600; font-size:13px; }
+    footer { margin-top:36px; color:var(--muted); font-size:13px; border-top:1px solid var(--line); padding-top:14px; }
+  </style>
+</head>
+<body>
+  <header>
+    <img class="logo" src="https://marius-commits.github.io/village-hub-whatsapp-approvals/logo.png" width="56" height="56" alt="The Village Hub logo">
+    <div>
+      <h1>Client WhatsApp backlog</h1>
+      <p>The Village Hub · approve, decline or change each message</p>
+    </div>
+    <div class="who" id="who"></div>
+  </header>
+  <div class="banner">Approve = queue it for Hub Desk to send. Nothing is sent from this page, and auto-send stays off.</div>
+  <div class="wrap">
+    <p class="meta"><a href="./">Overview</a> · <a href="approve.html">Queued drafts</a> · <a href="inbox.html">WhatsApp inbox</a> · Sign-in is limited to Marius, Christel and Francois.</p>
+    <div id="notice"></div>
+    <div id="auth" class="card hidden"></div>
+    <div id="app" class="hidden">
+      <div class="card" style="background:#fffaf0">
+        <b>How this works.</b> <b>Approve</b> marks a row approved and ready to send. Hub Desk then sends it from +27 63 260 3513 (or hello@villagehub.co.za for email rows), only between 08:00 and 19:00 SAST and at most 2 messages per person per week. Rows whose template Meta has not approved yet wait until it is approved. <b>Decline</b> drops it. <b>Change</b> sends your note back to Hub Desk to redraft. All messages are in English. Click any template code (for example <button class="tpl" type="button" data-tpl="T01">T01</button>) to preview it.
+      </div>
+      <div class="stats" id="stats"></div>
+      <div class="filters">
+        <select id="f-status"><option value="">All statuses</option><option value="pending" selected>Waiting for a decision</option><option value="approved">Approved (queued)</option><option value="change_requested">Change requested</option><option value="declined">Declined</option></select>
+        <select id="f-prio"><option value="">All priorities</option><option value="high">High</option><option value="med">Medium</option><option value="low">Low</option></select>
+        <select id="f-cat"><option value="">All categories</option><option value="A">A. Leads</option><option value="B">B. Bookings and members</option><option value="C">C. Campaigns</option><option value="D">D. Operational</option></select>
+        <select id="f-rev"><option value="">Everything</option><option value="1">Review asks only</option></select>
+      </div>
+      <div id="list"></div>
+    </div>
+    <footer>The Village Hub · 1st Floor, The Foundry, Nooitgedacht Village, Stellenbosch · Business WhatsApp +27 63 260 3513. Contact details on this page are only shown to signed-in approvers.</footer>
+  </div>
+  <div id="modal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="m-title"><div class="box" id="m-box"></div></div>
+<script>
+const SUPABASE_URL = 'https://lcrjcdlydlfrohtppmky.supabase.co';
+const ANON = 'sb_publishable_o99egQoMPiyVoqxYGwhLEw_vzzX1fVo';
+const ALLOW = ['marius@brick-field.co.za', 'christel@villagehub.co.za', 'francois@brick-field.co.za'];
+const PAGE = 'https://marius-commits.github.io/village-hub-whatsapp-approvals/backlog.html';
+const AUTH_KEY = 'vh-inbox-auth'; // same saved sign-in as the inbox page
+const sb = supabase.createClient(SUPABASE_URL, ANON, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storage: window.localStorage, storageKey: AUTH_KEY } });
+const $ = (id) => document.getElementById(id);
+const CAT = { A: 'A. Lead capture and speed-to-lead', B: 'B. Booking and member journey', C: 'C. Campaigns and marketing', D: 'D. Operational' };
+const PRIO = { high: 'High', med: 'Medium', low: 'Low' };
+const STATUS = { pending: 'Waiting', approved: 'Approved · queued, not sent', declined: 'Declined', change_requested: 'Change requested' };
+const META = { APPROVED: 'Approved by Meta', draft_not_submitted: 'Draft, not yet submitted to Meta', freeform_not_a_template: 'Free-form reply (24-hour window only)' };
+let DATA = { rows: [], templates: [] };
+let busy = false;
+
+function esc(s) { return String(s ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function fmt(ts) { if (!ts) return ''; return new Date(ts).toLocaleString('en-ZA', { timeZone:'Africa/Johannesburg', day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) + ' SAST'; }
+function note(msg, ok) { $('notice').innerHTML = msg ? `<div class="${ok ? 'ok' : 'err'}">${esc(msg)}</div>` : ''; }
+
+function renderAuth(msg) {
+  $('app').classList.add('hidden'); $('auth').classList.remove('hidden'); $('who').innerHTML = '';
+  $('auth').innerHTML = `<h3 style="font-family:Poppins;margin:0 0 6px;color:var(--brown)">Staff sign-in</h3>
+    <p class="meta">For marius@brick-field.co.za, christel@villagehub.co.za and francois@brick-field.co.za. If you are already signed in to the WhatsApp inbox on this device, you are signed in here too.</p>
+    ${msg ? `<div class="err">${esc(msg)}</div>` : ''}
+    <label for="email">Work email</label><input id="email" type="email" autocomplete="username">
+    <div class="row"><button class="b-ok" id="send" type="button">Email me a code</button></div>
+    <label for="otp">Code from the email</label><input id="otp" inputmode="numeric" autocomplete="one-time-code">
+    <div class="row"><button class="b-dark" id="verify" type="button">Sign in</button></div>
+    <label for="pw">Or sign in with your password</label><input id="pw" type="password" autocomplete="current-password">
+    <div class="row"><button class="b-dark" id="pwbtn" type="button">Sign in with password</button></div>`;
+  $('send').onclick = async () => {
+    const email = $('email').value.trim().toLowerCase();
+    if (!ALLOW.includes(email)) return note('Only Marius, Christel and Francois can sign in.');
+    const { error } = await sb.auth.signInWithOtp({ email, options: { shouldCreateUser: true, emailRedirectTo: PAGE } });
+    note(error ? error.message : 'Check your inbox for the code or link.', !error);
+  };
+  $('verify').onclick = async () => {
+    const email = $('email').value.trim().toLowerCase(), token = $('otp').value.trim();
+    const { error } = await sb.auth.verifyOtp({ email, token, type: 'email' });
+    if (error) note(error.message); else { note(''); boot(); }
+  };
+  $('pwbtn').onclick = async () => {
+    const email = $('email').value.trim().toLowerCase(), password = $('pw').value;
+    if (!ALLOW.includes(email)) return note('Only Marius, Christel and Francois can sign in.');
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    if (error) note(/invalid/i.test(error.message) ? 'Wrong email or password. If you have not set a password yet, use the emailed code.' : error.message); else { note(''); boot(); }
+  };
+}
+
+function tplBtns(code) {
+  if (!code) return '—';
+  return String(code).replace(/[&<>"']/g, '').replace(/\b(T\d{2}|F-[A-Z0-9]+)\b/g, (m) => `<button class="tpl" type="button" data-tpl="${m}">${m}</button>`);
+}
+
+function openTemplate(code, rowId) {
+  const t = (DATA.templates || []).find((x) => x.code === code && (x.language || 'en') === 'en');
+  const r = rowId ? DATA.rows.find((x) => x.id === rowId) : null;
+  const box = $('m-box');
+  if (!t) {
+    box.innerHTML = `<h3 id="m-title">${esc(code)}</h3><p>This template is not in the database.</p><div class="row"><button class="b-ghost" id="m-close" type="button">Close</button></div>`;
+  } else {
+    const buttons = (t.buttons || []).map((b) => `<span class="wabtn">${esc(b.text || '')}</span>`).join('');
+    box.innerHTML = `<h3 id="m-title">${esc(t.code)} · ${esc(t.name)}</h3>
+      <p class="meta"><span class="pill">${esc(t.category)}</span><span class="pill">English</span><span class="pill ${t.meta_status === 'APPROVED' ? 's-approved' : 's-pending'}">${esc(META[t.meta_status] || t.meta_status)}</span></p>
+      <label>Template</label><div class="wa">${esc(t.body)}</div>${buttons}
+      ${r ? `<label style="margin-top:12px">As it would read for ${esc(r.contact_first_name || r.client_name)}</label><div class="wa">${esc(r.proposed_message)}</div>${r.channel === 'whatsapp' ? buttons : ''}` : ''}
+      ${t.notes ? `<p class="meta" style="margin-top:10px">${esc(t.notes)}</p>` : ''}
+      <div class="row"><button class="b-ghost" id="m-close" type="button">Close</button></div>`;
+  }
+  $('modal').classList.remove('hidden');
+  $('m-close').focus();
+  $('m-close').onclick = closeModal;
+}
+function closeModal() { $('modal').classList.add('hidden'); }
+$('modal').addEventListener('click', (e) => { if (e.target.id === 'modal') closeModal(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+function card(r) {
+  const contact = [r.contact_phone_e164, r.contact_email].filter(Boolean).join(' · ');
+  const decided = r.status !== 'pending';
+  const pills = [
+    `<span class="pill">#${r.row_no}</span>`,
+    `<span class="pill">${esc(r.trigger_id)} · ${esc(r.trigger_name)}</span>`,
+    tplBtns(r.template_code),
+    `<span class="pill p-${r.priority}">${PRIO[r.priority]}</span>`,
+    `<span class="pill">${r.channel === 'whatsapp' ? 'WhatsApp' : r.channel === 'email' ? 'Email (no mobile)' : 'Internal to Christel'}</span>`,
+    r.review_ask ? '<span class="pill rev">Review ask · rating first</span>' : '',
+    `<span class="pill s-${r.status}">${esc(STATUS[r.status])}</span>`
+  ].join(' ');
+  const actions = r.send_status === 'sent' ? `<p class="meta">Sent.</p>` : decided
+    ? `<p class="meta">${esc(STATUS[r.status])} by ${esc(r.decided_by || '')} · ${fmt(r.decided_at)}</p>
+       ${r.change_note ? `<div class="note"><b>Change asked:</b> ${esc(r.change_note)}</div>` : ''}
+       <div class="row"><button class="b-ghost" type="button" data-act="reset" data-id="${r.id}">Undo (back to waiting)</button></div>`
+    : `<div class="row">
+         <button class="b-ok" type="button" data-act="approve" data-id="${r.id}">Approve</button>
+         <button class="b-no" type="button" data-act="decline" data-id="${r.id}">Decline</button>
+         <button class="b-dark" type="button" data-act="toggle-change" data-id="${r.id}">Change</button>
+       </div>
+       <div class="hidden" id="chg-${r.id}">
+         <label for="txt-${r.id}">What should change?</label>
+         <textarea id="txt-${r.id}" placeholder="e.g. say 'Monday' not 'Tuesday', or Christel will phone instead"></textarea>
+         <div class="row"><button class="b-dark" type="button" data-act="change" data-id="${r.id}">Send change request</button></div>
+       </div>`;
+  return `<article class="card ${decided ? 'done st-' + r.status : ''}" id="row-${r.id}">
+    <h3>${esc(r.client_name)}</h3>
+    <p class="meta">${pills}</p>
+    ${r.company ? `<p class="meta">${esc(r.company)}</p>` : ''}
+    <p class="meta">${contact ? esc(contact) : 'No contact on file'}${r.suggested_send ? ' · Suggested send: ' + esc(r.suggested_send) : ''}</p>
+    <p class="why"><b>Why now:</b> ${esc(r.why_now)}</p>
+    <div class="msg">${esc(r.proposed_message)}</div>
+    ${r.notes ? `<p class="meta">${esc(r.notes)}</p>` : ''}
+    ${actions}
+  </article>`;
+}
+
+function render() {
+  const rows = DATA.rows || [];
+  const n = (f) => rows.filter(f).length;
+  $('stats').innerHTML = [
+    [rows.length, 'Rows'], [n((r) => r.status === 'pending'), 'Waiting'], [n((r) => r.status === 'approved'), 'Approved · queued'],
+    [n((r) => r.status === 'change_requested'), 'Change asked'], [n((r) => r.status === 'declined'), 'Declined'], [n((r) => r.review_ask), 'Review asks']
+  ].map(([v, l]) => `<div class="stat"><b>${v}</b><span>${l}</span></div>`).join('');
+  const fs = $('f-status').value, fp = $('f-prio').value, fc = $('f-cat').value, fr = $('f-rev').value;
+  const shown = rows.filter((r) => (!fs || r.status === fs) && (!fp || r.priority === fp) && (!fc || r.category === fc) && (!fr || r.review_ask));
+  const order = { high: 0, med: 1, low: 2 };
+  const html = ['A', 'B', 'C', 'D'].map((c) => {
+    const list = shown.filter((r) => r.category === c).sort((a, b) => order[a.priority] - order[b.priority] || a.row_no - b.row_no);
+    if (!list.length) return '';
+    return `<h2 class="cat">${CAT[c]}</h2>` + list.map(card).join('');
+  }).join('');
+  $('list').innerHTML = html || '<div class="card">Nothing matches these filters.</div>';
+}
+
+async function decide(id, action, noteText) {
+  if (busy) return; busy = true;
+  document.querySelectorAll(`[data-id="${id}"]`).forEach((b) => (b.disabled = true));
+  try {
+    const { data, error } = await sb.rpc('wa_backlog_decide', { p_id: id, p_action: action, p_note: noteText || null });
+    if (error) throw error;
+    const r = DATA.rows.find((x) => x.id === id);
+    const label = { approve: 'Approved and queued for Hub Desk (not sent)', decline: 'Declined', change: 'Change request saved', reset: 'Back to waiting' }[action];
+    note(`${label}: #${r ? r.row_no : ''} ${r ? r.client_name : ''}, by ${data.by} at ${fmt(data.at)}.`, true);
+    await load();
+  } catch (e) {
+    note(e.message || String(e));
+    if (/JWT|not on the approver|401/i.test(e.message || '')) renderAuth('Please sign in again.');
+  } finally { busy = false; }
+}
+
+$('list').addEventListener('click', (ev) => {
+  const t = ev.target.closest('button.tpl');
+  if (t) { const art = t.closest('article'); return openTemplate(t.dataset.tpl, art ? art.id.replace('row-', '') : null); }
+  const b = ev.target.closest('button[data-act]');
+  if (!b) return;
+  const id = b.dataset.id, act = b.dataset.act;
+  if (act === 'toggle-change') { $('chg-' + id).classList.toggle('hidden'); $('txt-' + id).focus(); return; }
+  if (act === 'change') { const txt = $('txt-' + id).value.trim(); if (!txt) return note('Type what should change first.'); return decide(id, 'change', txt); }
+  decide(id, act);
+});
+document.querySelector('.card[style] button.tpl')?.addEventListener('click', (e) => openTemplate(e.target.dataset.tpl, null));
+['f-status', 'f-prio', 'f-cat', 'f-rev'].forEach((id) => $(id).addEventListener('change', render));
+
+async function load() {
+  const { data, error } = await sb.rpc('wa_backlog_list', { p_batch: null });
+  if (error) throw error;
+  DATA = data || { rows: [], templates: [] };
+  render();
+}
+
+async function boot() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) return renderAuth('');
+  const email = (session.user?.email || '').toLowerCase();
+  if (!ALLOW.includes(email)) { await sb.auth.signOut({ scope: 'local' }); return renderAuth('That inbox is not on the approver list.'); }
+  $('auth').classList.add('hidden'); $('app').classList.remove('hidden');
+  $('who').innerHTML = `${esc(email)}<br><button type="button" id="signout">Sign out</button>`;
+  $('signout').onclick = async () => { await sb.auth.signOut({ scope: 'local' }); renderAuth(''); note('Signed out.', true); };
+  try { await load(); } catch (e) { note(e.message || String(e)); if (/approver|JWT/i.test(e.message || '')) renderAuth(e.message); }
+}
+let booted = false;
+sb.auth.onAuthStateChange((event) => { if (event === 'SIGNED_IN' && booted) boot(); });
+boot().then(() => { booted = true; });
+</script>
+</body>
+</html>

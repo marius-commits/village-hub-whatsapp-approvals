@@ -98,6 +98,16 @@
     .card { background: var(--white); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin-bottom: 12px; }
     .card h3 { font-family: Poppins, sans-serif; margin: 0 0 6px; color: var(--brown); font-size: 16px; }
     .muted { color: var(--muted); font-size: 13px; }
+    button.tpl { font-family: Inter, sans-serif; font-size: 11px; font-weight: 700; border: 0; border-radius: 999px; padding: 2px 9px; background: var(--brown); color: #fff; cursor: pointer; margin: 0 3px 3px 0; }
+    button.tpl:hover { background: var(--brown2); }
+    a.navlink { font-family: Poppins, sans-serif; font-size: 14px; border: 1px solid var(--olive); background: var(--olive); color: #fff; padding: 8px 14px; border-radius: 999px; text-decoration: none; }
+    #tplmodal { position: fixed; inset: 0; background: rgba(43,33,24,.55); display: none; align-items: center; justify-content: center; padding: 16px; z-index: 50; }
+    #tplmodal.open { display: flex; }
+    #tplmodal .box { background: var(--white); border-radius: 14px; max-width: 540px; width: 100%; max-height: 88vh; overflow: auto; padding: 18px 20px; border-top: 6px solid var(--gold); }
+    #tplmodal h3 { font-family: Poppins, sans-serif; margin: 0 0 6px; color: var(--brown); }
+    #tplmodal .wa { background: #e9f0dc; border-radius: 10px; padding: 10px 12px; white-space: pre-wrap; font-size: 14.5px; }
+    #tplmodal .wabtn { display: block; text-align: center; background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 6px; margin-top: 6px; color: #25406a; font-weight: 600; font-size: 13px; }
+    #tplmodal .close { font-family: Poppins, sans-serif; font-size: 13px; border: 1px solid var(--line); background: transparent; color: var(--brown); border-radius: 999px; padding: 8px 14px; cursor: pointer; margin-top: 12px; }
     .rules li { margin: 0 0 8px; }
     .err { background: #fbeee0; border-left: 4px solid var(--bad); padding: 10px 12px; border-radius: 6px; }
     footer { margin-top: 40px; color: var(--muted); font-size: 13px; border-top: 1px solid var(--line); padding-top: 16px; }
@@ -127,6 +137,7 @@
       <button type="button" role="tab" aria-selected="false" data-tab="triggers">Trigger backlog</button>
       <button type="button" role="tab" aria-selected="false" data-tab="templates">Templates</button>
       <button type="button" role="tab" aria-selected="false" data-tab="rules">Rules &amp; go-live</button>
+      <a class="navlink" href="https://marius-commits.github.io/village-hub-whatsapp-approvals/backlog.html">Client backlog: approve / decline / change</a>
     </nav>
 
     <section id="queue" class="active">
@@ -137,13 +148,13 @@
 
     <section id="triggers">
       <h2>Trigger backlog</h2>
-      <p class="lead">All 49 proposed messages and journeys. Every trigger is off and in dry-run. Reply to Marius’s email with the IDs you are happy for us to switch on later — nothing is on today.</p>
+      <p class="lead">All 49 proposed messages and journeys. Every trigger is off and in dry-run. Click a template code (for example T01) to preview it here. The client-by-client backlog with <strong>Approve, Decline and Change</strong> buttons is on the <a href="https://marius-commits.github.io/village-hub-whatsapp-approvals/backlog.html">client backlog page</a> (staff sign-in). Approving there queues a message for Hub Desk; it does not send it.</p>
       <div id="triggers-body"></div>
     </section>
 
     <section id="templates">
       <h2>Templates</h2>
-      <p class="lead">All 33 English Meta templates are stored as drafts in the database and the repo. They have <strong>not</strong> been submitted to Meta. Afrikaans versions of T01, T14 and T17 are ready if you want them later.</p>
+      <p class="lead">All 33 English Meta templates are stored as drafts in the database and the repo. Approved ones are marked; the rest have <strong>not</strong> been submitted to Meta yet. All client messages are in English only (Marius, 18 Nov 2026).</p>
       <div id="templates-body"></div>
     </section>
 
@@ -163,7 +174,7 @@
       <ol class="rules">
         <li>Create a System User token for Meta app Village Hub Messaging (1443450127292023) and store it only as a Supabase secret. Do not paste it in email or chat.</li>
         <li>Add a payment method on the WhatsApp account.</li>
-        <li>Submit the Phase 1 templates (T01–T05, T14, T17, T33) to Meta — English only unless you want Afrikaans too.</li>
+        <li>Submit the remaining templates to Meta — English only.</li>
         <li>Register this webhook with Meta (not done).</li>
         <li>Website WhatsApp links are moving from 072 531 0904 to +27 63 260 3513 (approved 10 Nov 2026). Google Ads are unchanged.</li>
         <li>No Google Ads changes until you say yes.</li>
@@ -175,6 +186,7 @@
       This page is not a public marketing page. Share previews are enabled for WhatsApp, Facebook, LinkedIn and X.
     </footer>
   </div>
+  <div id="tplmodal" role="dialog" aria-modal="true" aria-labelledby="tpl-title"><div class="box"></div></div>
   <script>
     const tabs = document.querySelectorAll('nav.tabs button');
     tabs.forEach((btn) => btn.addEventListener('click', () => {
@@ -184,6 +196,24 @@
     const pill = (cls, text) => `<span class="pill ${cls}">${text}</span>`;
     const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
     const catPill = (c) => pill(c === 'marketing' ? 'mkt' : c === 'service' ? 'svc' : c === 'internal' ? 'int' : 'util', c || '—');
+    let TEMPLATES = [];
+    const tplBtns = (code) => code ? esc(code).replace(/\b(T\d{2}|F-[A-Z0-9]+)\b/g, (m) => `<button class="tpl" type="button" data-tpl="${m}">${m}</button>`) : '—';
+    function openTpl(code) {
+      const t = TEMPLATES.find((x) => x.code === code);
+      const box = document.querySelector('#tplmodal .box');
+      box.innerHTML = t ? `<h3 id="tpl-title">${esc(t.code)} · ${esc(t.name)}</h3>
+        <p>${catPill(t.category)} ${pill('draft','English')} ${pill(t.meta_status === 'APPROVED' ? 'approved' : 'draft', t.meta_status === 'APPROVED' ? 'Approved by Meta' : (t.meta_status || '').replaceAll('_',' '))}</p>
+        <div class="wa">${esc(t.body)}</div>${(t.buttons || []).map((b) => `<span class="wabtn">${esc(b.text || '')}</span>`).join('')}
+        ${t.notes ? `<p class="muted" style="margin-top:10px">${esc(t.notes)}</p>` : ''}
+        <button class="close" type="button">Close</button>`
+        : `<h3 id="tpl-title">${esc(code)}</h3><p>This template is not loaded yet.</p><button class="close" type="button">Close</button>`;
+      document.getElementById('tplmodal').classList.add('open');
+      box.querySelector('.close').focus();
+      box.querySelector('.close').onclick = closeTpl;
+    }
+    function closeTpl() { document.getElementById('tplmodal').classList.remove('open'); }
+    document.addEventListener('click', (e) => { const b = e.target.closest('button.tpl'); if (b) openTpl(b.dataset.tpl); if (e.target.id === 'tplmodal') closeTpl(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeTpl(); });
     const stPill = (s) => pill(s === 'pending_approval' ? 'pending' : s || 'off', (s || '').replace('_', ' '));
 
     fetch('https://lcrjcdlydlfrohtppmky.supabase.co/functions/v1/wa-dashboard/api/data?apikey=sb_publishable_o99egQoMPiyVoqxYGwhLEw_vzzX1fVo')
@@ -233,21 +263,22 @@
               <td>${esc(t.name)}<br><span class="muted">${esc(t.source || '')}</span></td>
               <td>${esc(t.timing || '')}</td>
               <td>${catPill(t.category)}</td>
-              <td>${esc(t.template_code || '—')}</td>
+              <td>${tplBtns(t.template_code)}</td>
               <td>${pill('off','off')} ${pill('draft','dry-run')}</td>
             </tr>`).join('')}</tbody></table>`;
         }).join('');
 
-        const meta = tm.filter((t) => t.meta_status === 'draft_not_submitted');
-        const free = tm.filter((t) => t.meta_status !== 'draft_not_submitted');
+        TEMPLATES = tm.filter((t) => (t.language || 'en') === 'en');
+        const meta = TEMPLATES.filter((t) => t.meta_status !== 'freeform_not_a_template');
+        const free = TEMPLATES.filter((t) => t.meta_status === 'freeform_not_a_template');
         const block = (list, title) => `<p class="phase">${title}</p>` + list.map((t) => `
           <div class="card">
-            <h3>${esc(t.code)} · ${esc(t.name)} · ${esc(t.language)}</h3>
+            <h3>${esc(t.code)} · ${esc(t.name)} · English</h3>
             <div>${catPill(t.category)} ${pill('draft', t.meta_status.replaceAll('_',' '))}</div>
             <p class="msg">${esc(t.body)}</p>
             <div class="muted">Buttons: ${esc((t.buttons||[]).map((b)=>b.text).filter(Boolean).join(' · ') || 'none')}${t.notes ? ' · ' + t.notes : ''}</div>
           </div>`).join('');
-        document.getElementById('templates-body').innerHTML = block(meta, 'Draft Meta templates (not submitted)') + block(free, 'Free-form replies (inside the 24-hour window only)');
+        document.getElementById('templates-body').innerHTML = block(meta, 'Meta templates') + block(free, 'Free-form replies (inside the 24-hour window only)');
       })
       .catch((e) => {
         document.getElementById('queue-body').innerHTML = `<div class="err">${esc(e.message)}</div>`;
